@@ -38,3 +38,5 @@ plt.title('PCA of Text Embeddings')
 plt.xlabel('Principal Component 1')
 plt.ylabel('Principal Component 2')
 plt.show()
+
+print ("hi")
