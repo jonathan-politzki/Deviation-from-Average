@@ -1,6 +1,7 @@
 import os
 from bs4 import BeautifulSoup
 import pandas as pd
+import re
 
 # Specify the directory containing the HTML files
 data_directory = 'Data/Essays'
@@ -23,8 +24,13 @@ for filename in os.listdir(data_directory):
             html_content = file.read()
             soup = BeautifulSoup(html_content, 'html.parser')
             
+            # Remove unwanted HTML tags (e.g., script, style)
+            for script in soup(["script", "style", "a"]):  # Add or remove tags as needed
+                script.decompose()
+            
             # Extract text from the HTML content
             text = soup.get_text(separator=' ', strip=True)
+            text = ' '.join(text.split())  # Remove excessive white space
             if text:
                 all_texts.append(text)
             else:
@@ -38,6 +44,3 @@ if not output_df.empty:
     print(f"Aggregated data written to {output_file_path}")
 else:
     print("No data was aggregated. The output CSV file has not been created.")
-
-
-# I may have to go through again and clean it up and tokenize it. There may be a need to also organize it by essay or structure it in some way, or to just keep it as a giant clump of te
