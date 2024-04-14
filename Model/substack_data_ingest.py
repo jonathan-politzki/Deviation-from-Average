@@ -1,7 +1,7 @@
 import os
 from bs4 import BeautifulSoup
 import pandas as pd
-import re
+import rge
 
 # Specify the directory containing the HTML files
 data_directory = 'Data/Essays'
