@@ -1,34 +1,46 @@
 import os
-import pandas as pd
 from bs4 import BeautifulSoup
+import pandas as pd
+import rge
 
 # Specify the directory containing the HTML files
-data_directory = '/path/to/html/files'
-output_file_path = '/path/to/output/substack_data.csv'
+data_directory = 'Data/Essays'
+output_file_path = 'Data/substack_data.csv'
 
-# Prepare a list to hold data
-all_data = []
+# List to hold all extracted text
+all_texts = []
 
-# Iterate over each file in the directory
+# Check if any files are being processed
+print(f"Processing files in {data_directory}...")
+
+# Iterate over each file in the Essays directory
 for filename in os.listdir(data_directory):
-    if filename.endswith('.html'):  # Ensuring only HTML files are processed
+    if filename.endswith('.html'):  # Adjusted to look for .html files
         file_path = os.path.join(data_directory, filename)
+        print(f"Reading file: {filename}")  # Print the name of the current file
+        
+        # Read the HTML content from the file
         with open(file_path, 'r', encoding='utf-8') as file:
-            soup = BeautifulSoup(file.read(), 'html.parser')
+            html_content = file.read()
+            soup = BeautifulSoup(html_content, 'html.parser')
             
-            # Example to extract title - adjust the selector as per your HTML structure
-            title = soup.find('h1').text if soup.find('h1') else 'No Title'
+            # Remove unwanted HTML tags (e.g., script, style)
+            for script in soup(["script", "style", "a"]):  # Add or remove tags as needed
+                script.decompose()
             
             # Extract text from the HTML content
             text = soup.get_text(separator=' ', strip=True)
-            
-            # Append title and text as a tuple to the list
-            all_data.append((title, text))
+            text = ' '.join(text.split())  # Remove excessive white space
+            if text:
+                all_texts.append(text)
+            else:
+                print(f"Warning: No text extracted from {filename}.")
+# Convert the list of texts into a DataFrame
+output_df = pd.DataFrame(all_texts, columns=['text'])
 
-# Create a DataFrame and specify column names
-df = pd.DataFrame(all_data, columns=['Title', 'Text'])
-
-# Save DataFrame to CSV
-df.to_csv(output_file_path, index=False)
-
-print(f'Data written to {output_file_path}')
+if not output_df.empty:
+    # Write the DataFrame to a new CSV file
+    output_df.to_csv(output_file_path, index=False)
+    print(f"Aggregated data written to {output_file_path}")
+else:
+    print("No data was aggregated. The output CSV file has not been created.")
