@@ -3,8 +3,8 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 # Specify the directory containing the HTML files
-data_directory = '/path/to/html/files'
-output_file_path = '/path/to/output/substack_data.csv'
+data_directory = 'Data/Essays'
+output_file_path = 'Data/substack_data_two_columns.csv'
 
 # Prepare a list to hold data
 all_data = []
@@ -16,8 +16,8 @@ for filename in os.listdir(data_directory):
         with open(file_path, 'r', encoding='utf-8') as file:
             soup = BeautifulSoup(file.read(), 'html.parser')
             
-            # Example to extract title - adjust the selector as per your HTML structure
-            title = soup.find('h1').text if soup.find('h1') else 'No Title'
+            # Try to extract title from <h1> tag, use filename (without extension) as fallback
+            title = soup.find('h1').text if soup.find('h1') else filename[:-5]  # Adjust slicing as needed
             
             # Extract text from the HTML content
             text = soup.get_text(separator=' ', strip=True)

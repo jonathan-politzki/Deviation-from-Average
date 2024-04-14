@@ -11,8 +11,9 @@ torch.set_default_dtype(torch.float32 if device == 'cpu' else torch.cuda.FloatTe
 torch.set_default_device(device)
 
 # Load the dataset
-df = pd.read_csv('/Users/jonathanpolitzki/Desktop/Coding/Deviation from Average/Data/substack_data.csv')
-texts = df['text'].tolist()
+df = pd.read_csv('/Users/jonathanpolitzki/Desktop/Coding/Deviation from Average/Data/substack_data_two_columns.csv')
+texts = df['Text'].tolist()
+titles = df['Title'].tolist()  # Load essay titles for labeling points on the plot
 
 # Load model and tokenizer with trust_remote_code enabled
 model = AutoModelForCausalLM.from_pretrained("microsoft/phi-2", trust_remote_code=True).to(device)
@@ -25,7 +26,6 @@ def get_hidden_states(text):
     hidden_states = outputs.hidden_states[-1]
     # Remove singleton dimensions and ensure it is 1D
     mean_hidden_states = hidden_states.mean(dim=1).squeeze().cpu().detach().numpy()
-    print("Shape of hidden states:", mean_hidden_states.shape)  # Should now print (2560,)
     return mean_hidden_states
 
 # Collect all hidden states for texts
@@ -34,15 +34,15 @@ all_hidden_states = [get_hidden_states(text) for text in texts if text.strip()] 
 # Stack all hidden states to create a 2D array (samples, features)
 if all_hidden_states:
     all_hidden_states = np.stack(all_hidden_states)
-    print("Stacked hidden states shape:", all_hidden_states.shape)  # Should print (number of texts, 2560)
-
     # Perform PCA on the 2D array of hidden states
     pca = PCA(n_components=2)
     reduced_features = pca.fit_transform(all_hidden_states)
 
-    # Plot the PCA results
-    plt.figure(figsize=(10, 6))
-    plt.scatter(reduced_features[:,0], reduced_features[:,1], alpha=0.5)
+    # Plot the PCA results with labels
+    plt.figure(figsize=(12, 8))
+    for i, title in enumerate(titles):
+        plt.scatter(reduced_features[i, 0], reduced_features[i, 1], label=str(title))
+        plt.text(reduced_features[i, 0], reduced_features[i, 1], f'{title}', fontsize=9)
     plt.title('PCA of Text Embeddings')
     plt.xlabel('Principal Component 1')
     plt.ylabel('Principal Component 2')
