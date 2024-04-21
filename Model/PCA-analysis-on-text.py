@@ -21,7 +21,7 @@ tokenizer = AutoTokenizer.from_pretrained("microsoft/phi-2", trust_remote_code=T
 
 # Example function to get hidden states
 def get_hidden_states(text):
-    inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=512).to(device)
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=100).to(device) # Note that the truncation of max_length of tokens is an important field for training speed. N^2 tokenization matrix training for covariance.
     outputs = model(**inputs, output_hidden_states=True)
     hidden_states = outputs.hidden_states[-1]
     # Remove singleton dimensions and ensure it is 1D
