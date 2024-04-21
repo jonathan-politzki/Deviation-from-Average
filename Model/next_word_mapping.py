@@ -10,8 +10,8 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Load the pre-trained model and tokenizer
 model_name = "microsoft/phi-2"
-model = AutoModelForCausalLM.from_pretrained(model_name).to(device)
-tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True).to(device)
+tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
 
 # Load your dataset
 df = pd.read_csv('/Users/jonathanpolitzki/Desktop/Coding/Deviation from Average/Data/substack_data_two_columns.csv')
@@ -26,18 +26,21 @@ def get_word_progressions(text, tokenizer, model):
     predicted_embeddings = []
     word_labels = []
 
-    for i in range(len(tokens) - 1):  # Up to the second to last token
+    for i in range(15):  # Limiting to 15 tokens to avoid out-of-range errors
         input_ids = torch.tensor([token_ids[:i+1]]).to(device)
         with torch.no_grad():
             outputs = model(input_ids, output_hidden_states=True)
-        hidden_states = outputs.hidden_states[-1][0, -1, :].cpu().numpy()  # Last token's hidden state
-        logits = outputs.logits[0, -1, :]  # Logits for the last token
-        predicted_token_id = logits.argmax().item()
-        predicted_embedding = model.transformer.wte.weight[predicted_token_id].cpu().numpy()
+        hidden_states = outputs.hidden_states[-1][0, -1, :].cpu().numpy()
+        logits = model.lm_head(outputs.hidden_states[-1][0, :, :]).detach().cpu().numpy()
+        predicted_token_id = logits.argmax(axis=1)[-1]  # This ensures we are getting the last token predicted id correctly
+        predicted_embedding = model.model.embed_tokens.weight[predicted_token_id].detach().cpu().numpy()
+
+        print(f"Token {i}: {tokens[i]} - Predicted Token ID: {predicted_token_id}")  # Debug print
 
         actual_embeddings.append(hidden_states)
         predicted_embeddings.append(predicted_embedding)
-        word_labels.append(tokens[i+1])  # The actual next word
+        if i < len(tokens) - 1:
+            word_labels.append(tokens[i+1])
 
     return np.array(actual_embeddings), np.array(predicted_embeddings), word_labels
 
@@ -52,16 +55,16 @@ def visualize_progressions(actual_embeddings, predicted_embeddings, word_labels,
 
     # Plot the points and lines
     plt.figure(figsize=(12, 8))
-    for i, (actual_point, predicted_point, word) in enumerate(zip(actual_pca, predicted_pca, word_labels)):
-        plt.scatter(*actual_point, color='blue')
-        plt.scatter(*predicted_point, color='red')
-        plt.plot([actual_point[0], predicted_point[0]], [actual_point[1], predicted_point[1]], 'grey', alpha=0.5)
-        plt.text(actual_point[0], actual_point[1], word, fontsize=8, ha='right')
+    actual_plot, = plt.plot(*zip(*actual_pca), marker='o', color='blue', linestyle='-', markersize=5, label='Actual Words')
+    predicted_plot, = plt.plot(*zip(*predicted_pca), marker='x', color='red', linestyle='-', markersize=5, label='Predicted Words')
+
+    for i, word in enumerate(word_labels):
+        plt.text(actual_pca[i][0], actual_pca[i][1], word, fontsize=8, ha='right')
 
     plt.title(f'PCA of Actual vs Predicted Word Progressions for {title}')
     plt.xlabel('Principal Component 1')
     plt.ylabel('Principal Component 2')
-    plt.legend(['Actual Word', 'Predicted Word'], loc='upper right')
+    plt.legend(handles=[actual_plot, predicted_plot], loc='upper right')
     plt.grid(True)
     plt.show()
 
