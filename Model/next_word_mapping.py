@@ -4,12 +4,17 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import numpy as np
+import random 
+
+np.random.seed(42)  # For NumPy generated random numbers
+random.seed(42)
+torch.manual_seed(42)  # For PyTorch – affects both CPU and CUDA
 
 # Set up device for computations
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Load the pre-trained model and tokenizer
-model_name = "microsoft/phi-2"
+model_name = "microsoft/phi-3"
 model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True).to(device)
 tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
 

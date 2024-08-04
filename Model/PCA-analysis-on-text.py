@@ -16,8 +16,8 @@ texts = df['Text'].tolist()
 titles = df['Title'].tolist()  # Load essay titles for labeling points on the plot
 
 # Load model and tokenizer with trust_remote_code enabled
-model = AutoModelForCausalLM.from_pretrained("microsoft/phi-2", trust_remote_code=True).to(device)
-tokenizer = AutoTokenizer.from_pretrained("microsoft/phi-2", trust_remote_code=True)
+model = AutoModelForCausalLM.from_pretrained("microsoft/phi-3", trust_remote_code=True).to(device)
+tokenizer = AutoTokenizer.from_pretrained("microsoft/phi-3", trust_remote_code=True)
 
 # Example function to get hidden states
 def get_hidden_states(text):
